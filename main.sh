@@ -136,7 +136,9 @@ _gen_efi_hook() {
 		eval '_k="${_i/'${KERNEL_PREFIX}'/}"'
 		initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
 		_initrd="initrd=\\$initrd"
-		_cmdline="$(_get_cmdline "$_k")"
+		set +e
+		_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
+		set -e
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"
 		echo -e -n "\n     initrd: $initrd\n"
 		_basedisk="/dev/$(lsblk -r -n -o PKNAME "$BOOT_DEVICE")"
@@ -219,12 +221,16 @@ _update_kernels() {
 		if [ -n "$INITRD_NAME" ]; then
 			initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
 			_initrd="initrd=\\$initrd"
-			_cmdline="$(_get_cmdline "$_k")"
+			set +e
+			_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
+			set -e
 			_rdzero=0
 		else
 			echo "! Unable to detect kernel initrd for $_i. Setup INITRD_NAME in the configuration file or manually write it to the CMDLINE of this kernel as initrd=\path"
 			_initrd=""
-			_cmdline="$(_get_cmdline "$_k")"
+			set +e
+			_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
+			set -e
 			_rdzero=1
 		fi
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"

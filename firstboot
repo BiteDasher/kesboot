@@ -1,0 +1,85 @@
+#!/bin/bash
+if [ "$(id -u)" -ne 0 ]; then
+        echo "The script must be run with superuser rights"
+        exit 1
+fi
+_read1() {
+	read -r -p "Where is the mounted EFI directory located? [/boot]: " _boot_dir
+}
+_read2() {
+	read -r -p "What is the default prefix for kernels to use? [vmlinuz-] (\"-\" for nothing): " _kernel_prefix
+}
+_read3() {
+	read -r -p "Enter the mask for initrd [initramfs-@kernel@.img] (\"-\" for nothing): " _initrd_name
+}
+_read4() {
+	echo "-----"
+	for file in "$_boot_dir"/*; do
+		[ -f "$file" ] && file="${file##*/}" || continue
+		if [ -n "$_initrd_name" ]; then
+			[[ "$file" == ${_initrd_name/@kernel@/\*} ]] && continue
+		fi
+		echo "$file"
+	done
+	echo "-----"
+	read -r -p "Enter the name of the kernel located in the $_boot_dir directory: " _kernel_to_boot
+}
+_read1
+[ -z "$_boot_dir" ] && _boot_dir='/boot'
+_boot_dir="${_boot_dir%/}"
+if [ ! -d "$_boot_dir" ]; then
+	echo "Error: directory $_boot_dir not found"
+	exit 1
+fi
+_read2
+[ -z "$_kernel_prefix" ] && _kernel_prefix='vmlinuz-'
+[ "$_kernel_prefix" == "-" ]  && _kernel_prefix=
+_read3
+[ -z "$_initrd_name" ] && _initrd_name='initramfs-@kernel@.img'
+[ "$_initrd_name" == "-" ] && _initrd_name=
+if [ -z "$_kernel_prefix" ]; then
+	_read4
+	if [ -z "$_kernel_to_boot" ]; then
+		echo "Error: You didn't enter the kernel name"
+		exit 1
+	fi
+	if [ ! -f "$_boot_dir"/"$_kernel_to_boot" ]; then
+		echo "Error: kernel $_kernel_to_boot not found"
+		exit 3
+	fi
+	sed "/#CMDLINES=('linux' 'mitifations=off')/d" -i /etc/kesboot.conf
+	echo "CMDLINES=(" >> /etc/kesboot.conf
+	echo "'$_kernel_to_boot' ''" >> /etc/kesboot.conf
+	echo ")" >> /etc/kesboot.conf
+else
+	for f in "$_boot_dir"/"$_kernel_prefix"*; do
+		f="${f##*/}"
+		eval 'f="${f/'$_kernel_prefix'/}"'
+		_add+="'$f' ''\n"
+	done
+	if [ -z "$_add" ]; then
+		echo "Error: No kernels with the $_kernel_prefix prefix were found"
+		exit 2
+	fi
+	sed "/#CMDLINES=('linux' 'mitifations=off')/d" -i /etc/kesboot.conf
+	echo "CMDLINES=(" >> /etc/kesboot.conf
+	echo -e "$_add" >> /etc/kesboot.conf
+	echo ")" >> /etc/kesboot.conf
+fi
+_boot_dir="${_boot_dir//\//\\/}"
+sed "s/#BOOT_DIR=\/boot/BOOT_DIR=$_boot_dir/" -i /etc/kesboot.conf
+[ -n "$_kernel_prefix" ] && sed "s/#KERNEL_PREFIX=vmlinuz-/KERNEL_PREFIX=$_kernel_prefix/" -i /etc/kesboot.conf || \
+                            sed "s/#KERNEL_PREFIX=vmlinuz-/KERNEL_PREFIX=/" -i /etc/kesboot.conf
+[ -n "$_initrd_name" ] && sed "s/#INITRD_NAME=initramfs-@kernel@.img/INITRD_NAME=$_initrd_name/" -i /etc/kesboot.conf || \
+                          sed "s/#INITRD_NAME=initramfs-@kernel@.img/INITRD_NAME=/" -i /etc/kesboot.conf
+
+source /usr/share/kesboot/main.sh
+source /usr/share/kesboot/default
+_lint_config || exit 1
+source /etc/kesboot.conf
+_check_array
+_check_array
+_get_efi_prefix
+_found_root || exit $?
+_found_boot || exit $?
+_update_kernels

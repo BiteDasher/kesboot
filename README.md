@@ -7,6 +7,29 @@ Script for automating work with EFI Kernel Stub (linux)
 ## How-to install:
 `./install.sh` (for remove use `./install.sh remove`)
 
+## Directory structure:
+```
+/
+├── etc
+│   └── kesboot.conf <- configuration file
+└── usr
+    ├── local
+    │   └── bin
+    │       └── kesboot <- interactive executable script
+    └── share
+        ├── kesboot
+        │   ├── default <- default source variables (before /etc/kesboot.conf)
+        │   └── main.sh <- functions for kesboot
+        └── libalpm <- (for pacman only)                          *
+            ├── hooks                                             *
+            │   └── 99-update-kesboot <- targets for hook script  *
+            └── scripts                                           *
+                └── kesboot-hook <- hook script                   *
+```
+
+## First boot:
+The script has the ability to configure the download during the installation of the OS. Check the `firstboot` file. If you decide to put it in the OS, make sure that the file structure is saved (according to the paragraph above), and the `kesboot.conf` file is not changed.
+
 ## Needed binaries:
 ```
 bash
