@@ -1,6 +1,10 @@
 # Kernel EFI Stub Bootloader
 
 _check_array() {
+	if [ -z "${CMDLINES[@]}" ]; then
+		echo "The CMDLINES array is missing. Edit the configuration file"
+		return 2
+	fi
 	if [ $(( ${#CMDLINES[@]} % 2 )) -ne 0 ]; then
 		echo "The array contains an odd number of array elements. Check the configuration file"
 		return 2
@@ -114,7 +118,7 @@ _get_cmdline() {
 	if [ -n "$_reg" ]; then
 		echo "$_reg"
 	else
-		echo "Something went wrong"
+		echo "cmdline for $1 not found!"
 		return 3
 	fi
 }
