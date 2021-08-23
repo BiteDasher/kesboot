@@ -28,7 +28,7 @@ Script for automating work with EFI Kernel Stub (linux)
 ```
 
 ## First boot:
-The script has the ability to configure the download during the installation of the OS. Check the `firstboot` file. If you decide to put it in the OS, make sure that the file structure is saved (according to the paragraph above), and the `kesboot.conf` file is not changed.
+The script has the ability to configure the EFI boot during the installation of the OS. Check the `firstboot` file. If you decide to put it in the OS, make sure that the file structure is saved (according to the paragraph above), and the `kesboot.conf` file is not changed.
 
 ## Needed binaries:
 ```
