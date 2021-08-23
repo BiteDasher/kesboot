@@ -1,0 +1,49 @@
+#!/bin/bash
+case "$1" in
+	h|-h|--help|help)
+		cat <<EOF
+usage: kesboot [options]
+
+  Options:
+    -r --remove <var>   Deletes the specified EFI variable
+    -u --update         Updates all variables according to the configuration file (/etc/kesboot.conf)
+    -l --list           Output of all EFI variables created via kesboot
+
+kesboot allows you to organize the management of kernel loads using the EFI Kernel Stub
+
+EOF
+	exit 0
+	;;
+esac
+if [ "$(id -u)" -ne 0 ]; then
+	echo "The script must be run with superuser rights"
+	exit 1
+fi
+source /usr/share/kesboot/main.sh
+source /usr/share/kesboot/default
+_lint_config || exit 1
+source /etc/kesboot.conf
+if [ -z "$1" ]; then
+	echo "The first argument is missing"
+	exit 1
+fi
+case "$1" in
+	r|-r|--remove|remove)
+		if [ -z "$2" ]; then
+			echo "The second argument is missing"
+			exit 1
+		fi
+		_remove_efi "$2"
+	;;
+	u|-u|--update|update)
+		_check_array
+		_get_efi_prefix
+		_found_root || exit $?
+		_found_boot || exit $?
+		_update_kernels
+	;;
+	l|-l|--list|list)
+		_get_efi_prefix
+		_list_efi_front
+	;;
+esac

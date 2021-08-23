@@ -1,0 +1,12 @@
+BOOT_DIR=/boot
+EFIBOOTMGR_PATH=/usr/bin/efibootmgr
+EFIBOOTMGR_EXTRA_FLAGS="-q"
+PRE_SCRIPT=
+POST_SCRIPT=
+CMDLINE_DEFAULT="rw"
+INITRD_NAME=initramfs-@kernel@.img
+KERNEL_PREFIX=vmlinuz-
+USE_DEF=1
+EFIVAR_PREFIX=1
+SUB_ROOT=1
+CMDLINES=('linux' 'mitifations=off')
