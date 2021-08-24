@@ -271,7 +271,7 @@ _remove_efi() {
 	fi
 	_test="$(_get_efi | grep --color=never -n -x "$1" | cut -d ":" -f 1)"
 	if [ -z "$_test" ] || (( "$(echo "$_test" | wc -l)" > 1 )); then
-		echo "Something went wrong"
+		echo "Something went wrong (most likely, there is no such EFI variable)"
 		return 3
 	fi
 	_string="$(_get_efi_num | sed "${_test}q;d")"
