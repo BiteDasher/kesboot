@@ -20,11 +20,11 @@ Script for automating work with EFI Kernel Stub (linux)
         ├── kesboot
         │   ├── default <- default source variables (before /etc/kesboot.conf)
         │   └── main.sh <- functions for kesboot
-        └── libalpm <- (for pacman only)                          *
-            ├── hooks                                             *
-            │   └── 99-update-kesboot <- targets for hook script  *
-            └── scripts                                           *
-                └── kesboot-hook <- hook script                   *
+        └── libalpm <- (for pacman only)                              *
+            ├── hooks                                                 *
+            │   └── 99-update-kesboot.hook <- targets for hook script *
+            └── scripts                                               *
+                └── kesboot-hook <- hook script                       *
 ```
 
 ## First boot:

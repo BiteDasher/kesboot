@@ -9,4 +9,3 @@ Target = usr/lib/initcpio/*
 Description = Updating EFI variables...
 When = PostTransaction
 Exec = /usr/share/libalpm/scripts/kesboot-hook
-NeedsTargets
