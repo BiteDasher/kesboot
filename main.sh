@@ -43,6 +43,19 @@ _echo_cmdlines() {
 	done
 }
 
+_gen_cmdlines() {
+	local _start=0 _end
+	_end="${#CMDLINES[@]}"
+	while [ "$_start" != "$_end" ]; do
+		eval "echo \'\${CMDLINES[$_start]}\' \'\${CMDLINES[$(( $_start + 1 ))]}\'" || {
+			echo "Something went wrong"
+			return 3
+		}
+		_start=$((_start+2))
+	done
+
+}
+
 _echo_kernels() {
 	local _start=0 _end
 	_end="${#CMDLINES[@]}"
@@ -134,6 +147,12 @@ _gen_efi_hook() {
 	for _i in "${BOOT_DIR}/${KERNEL_PREFIX}"*; do
 		_i="${_i##*/}"
 		eval '_k="${_i/'${KERNEL_PREFIX}'/}"'
+		#####
+		if [ -z "$(_echo_kernels | grep -x "$_k")" ]; then
+			echo "---> New kernel: $_k"
+			CMDLINES+=("$_k" "")
+		fi
+		#####
 		initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
 		_initrd="initrd=\\$initrd"
 		set +e
@@ -166,6 +185,11 @@ _gen_efi_hook() {
 		fi	
 	done
 	set +e
+	sed '/#CMDLINES=(.*/,/)/d' -i /etc/kesboot.conf
+	sed '/CMDLINES=(.*/,/)/d' -i /etc/kesboot.conf
+	echo "CMDLINES=(" >> /etc/kesboot.conf
+	_gen_cmdlines >> /etc/kesboot.conf
+	echo ")" >> /etc/kesboot.conf
 	$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
 }
 
