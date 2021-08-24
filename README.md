@@ -39,3 +39,7 @@ grep
 lsblk 
 cut
 ```
+
+## AUR git clone link:
+
+https://aur.archlinux.org/kesboot-git.git
