@@ -47,7 +47,7 @@ if [ -z "$_kernel_prefix" ]; then
 		echo "Error: kernel $_kernel_to_boot not found"
 		exit 3
 	fi
-	sed "/#CMDLINES=('linux' 'mitifations=off')/d" -i /etc/kesboot.conf
+	sed "/#CMDLINES=('linux' 'mitigations=off')/d" -i /etc/kesboot.conf
 	echo "CMDLINES=(" >> /etc/kesboot.conf
 	echo "'$_kernel_to_boot' ''" >> /etc/kesboot.conf
 	echo ")" >> /etc/kesboot.conf
@@ -61,7 +61,7 @@ else
 		echo "Error: No kernels with the $_kernel_prefix prefix were found"
 		exit 2
 	fi
-	sed "/#CMDLINES=('linux' 'mitifations=off')/d" -i /etc/kesboot.conf
+	sed "/#CMDLINES=('linux' 'mitigations=off')/d" -i /etc/kesboot.conf
 	echo "CMDLINES=(" >> /etc/kesboot.conf
 	echo -e "$_add" >> /etc/kesboot.conf
 	echo ")" >> /etc/kesboot.conf
