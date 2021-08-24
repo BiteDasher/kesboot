@@ -19,7 +19,7 @@ case "$1" in
 				/usr/share/libalpm/scripts/kesboot-hook
 				/usr/share/libalpm/hooks/99-update-kesboot.hook'; fi) ;;
 	makepkg) 
-		install -Dm755 ./kesboot "$pkgdir"/usr/local/bin/kesboot
+		install -Dm755 ./kesboot "$pkgdir"/usr/bin/kesboot
 		install -Dm644 ./main.sh "$pkgdir"/usr/share/kesboot/main.sh
 		install -Dm644 ./default "$pkgdir"/usr/share/kesboot/default
 		install -Dm644 ./kesboot.conf "$pkgdir"/etc/kesboot.conf
