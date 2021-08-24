@@ -1,7 +1,7 @@
 # Kernel EFI Stub Bootloader
 
 _check_array() {
-	if [ -z "${CMDLINES[@]}" ]; then
+	if [ -z "${CMDLINES[*]}" ]; then
 		echo "The CMDLINES array is missing. Edit the configuration file"
 		return 2
 	fi
