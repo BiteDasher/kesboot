@@ -23,6 +23,7 @@ source /usr/share/kesboot/main.sh
 source /usr/share/kesboot/default
 _lint_config || exit 1
 source /etc/kesboot.conf
+_check_binaries || exit $?
 BOOT_DIR="${BOOT_DIR%/}"
 if [ -z "$1" ]; then
 	echo "The first argument is missing"

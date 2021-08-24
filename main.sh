@@ -11,6 +11,21 @@ _check_array() {
 	fi
 }
 
+if_com() {
+	command -v "$1" &>/dev/null
+}
+
+_check_binaries() {
+	if ! if_com $EFIBOOTMGR_PATH || \
+	   ! if_com sed || \
+	   ! if_com grep || \
+	   ! if_com lsblk || \
+	   ! if_com cut; then
+		echo "Error: some of the necessary binaries are missing (efibootmgr, sed, grep, lsblk, cut)"
+		return 1
+	fi
+}
+
 _get_efi_prefix() {
 	local _name
 	_name="$(grep -o '^NAME=".*"' '/etc/os-release')"

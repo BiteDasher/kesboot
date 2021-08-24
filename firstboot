@@ -77,6 +77,7 @@ source /usr/share/kesboot/main.sh
 source /usr/share/kesboot/default
 #_lint_config || exit 1
 source /etc/kesboot.conf
+_check_binaries || exit $?
 _check_array
 _get_efi_prefix
 _found_root || exit $?
