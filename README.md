@@ -22,9 +22,11 @@ Script for automating work with EFI Kernel Stub (linux)
         │   └── main.sh <- functions for kesboot
         └── libalpm <- (for pacman only)                              *
             ├── hooks                                                 *
+            │   ├── 61-remove-kesboot.hook <- targets for hook script *
             │   └── 99-update-kesboot.hook <- targets for hook script *
             └── scripts                                               *
-                └── kesboot-hook <- hook script                       *
+                ├── kesboot-remove-hook <- hook script                *
+                └── kesboot-install-hook <- hook script               *
 ```
 
 ## First boot:
@@ -38,6 +40,7 @@ sed
 grep
 lsblk 
 cut
+strings
 ```
 
 ## AUR git clone link:
