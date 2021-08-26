@@ -27,8 +27,8 @@ case "$1" in
 		install -Dm644 ./main.sh "$pkgdir"/usr/share/kesboot/main.sh
 		install -Dm644 ./default "$pkgdir"/usr/share/kesboot/default
 		install -Dm644 ./kesboot.conf "$pkgdir"/etc/kesboot.conf
-		install -vDm755 ./hook-install "$pkgdir"/usr/share/libalpm/scripts/kesboot-install-hook
-		install -vDm755 ./hook-remove "$pkgdir"/usr/share/libalpm/scripts/kesboot-remove-hook
-		install -vDm644 ./pacman-install-hook "$pkgdir"/usr/share/libalpm/hooks/99-update-kesboot.hook
-		install -vDm644 ./pacman-remove-hook "$pkgdir"/usr/share/libalpm/hooks/61-remove-kesboot.hook ;;
+		install -Dm755 ./hook-install "$pkgdir"/usr/share/libalpm/scripts/kesboot-install-hook
+		install -Dm755 ./hook-remove "$pkgdir"/usr/share/libalpm/scripts/kesboot-remove-hook
+		install -Dm644 ./pacman-install-hook "$pkgdir"/usr/share/libalpm/hooks/99-update-kesboot.hook
+		install -Dm644 ./pacman-remove-hook "$pkgdir"/usr/share/libalpm/hooks/61-remove-kesboot.hook ;;
 esac
