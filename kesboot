@@ -9,7 +9,7 @@ usage: kesboot [options]
     -u --update         Updates all variables according to the configuration file (/etc/kesboot.conf)
     -l --list           Output of all EFI variables created via kesboot
 
-kesboot allows you to organize the management of kernel loads using the EFI Kernel Stub
+kesboot allows you to manage the boot of the kernel using the EFI Kernel Stub
 
 EOF
 	exit 0
@@ -41,7 +41,7 @@ case "$1" in
 		_remove_efi "$2"
 	;;
 	u|-u|--update|update)
-		_check_array
+		_check_array || exit $?
 		_get_efi_prefix
 		_found_root || exit $?
 		_found_boot || exit $?

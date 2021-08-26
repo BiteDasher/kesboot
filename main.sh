@@ -152,6 +152,7 @@ _get_cmdline() {
 }
 
 _gen_efi_hook() {
+	[ "$INSTALL_HOOK" == 1 ] || return 0
 	set -e
 	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var
 	if [ -z "$KERNEL_PREFIX" ] || [ -z "$INITRD_NAME" ]; then
@@ -206,6 +207,62 @@ _gen_efi_hook() {
 	_gen_cmdlines >> /etc/kesboot.conf
 	echo ")" >> /etc/kesboot.conf
 	$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
+}
+
+_remove_efi_hook() {
+	[ "$REMOVE_HOOK" == 1 ] || return 0
+	if ! if_com strings; then
+		echo "Error: command strings not found!"
+		return 1
+	fi
+	if [ -z "$KERNEL_PREFIX" ]; then
+		echo "KERNEL_PREFIX variable is empty, nothing to do"
+		return 5
+	fi
+	local _to_remove _k _efi_var _strings _final
+	#_get_bootorder
+	while read -r _to_remove; do
+	if [[ "$_to_remove" != /* ]]; then
+		_to_remove="/${_to_remove}"
+	fi
+	if [[ "$_to_remove" != "$BOOT_DIR"/* ]]; then
+		[[ -f "$_to_remove" ]] || continue
+		[[ "$_to_remove" == */"$1" ]] || continue
+		_strings="$(echo "$_to_remove" | grep -o "[^/]*/[^/]*$")"
+		_strings="${_strings%%/*}"
+		_strings="$(strings "$_to_remove" | grep --color=never "$_strings" | grep -o "(.*)" | cut -d " " -f 1)"
+		read -r _final <<< $(echo "$_strings")
+		_final="${_final%%@*}"
+		_final="${_final#(}"
+		_to_remove="${KERNEL_PREFIX}${_final}"
+	else
+		[[ -f "$_to_remove" ]] || continue
+		_to_remove="${_to_remove##*/}"
+		[[ "$_to_remove" == ${KERNEL_PREFIX}* ]] || continue
+	fi
+		eval '_k="${_to_remove/'${KERNEL_PREFIX}'/}"'
+		if [ "$EFIVAR_PREFIX" == 1 ]; then
+			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_to_remove)$")" ]; then
+				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_to_remove)$")"
+				_efi_var="${_efi_var%% *}"
+				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
+				sed "/'$_k' .*/d" -i /etc/kesboot.conf
+				echo "===> Removed $_k"
+			else
+				echo "Can't find the $_k kernel in the EFI variables..."
+			fi
+		else
+			if [ "$(_grep=1 _get_efi_num | grep -o "^$_to_remove$")" ]; then
+				_efi_var="$(_get_efi_num | grep -o ".... $_to_remove$")"
+				_efi_var="${_efi_var%% *}"
+				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
+				sed "/'$_k' .*/d" -i /etc/kesboot.conf
+				echo "===> Removed $_k"
+			else
+				echo "Can't find the $_k kernel in the EFI variables..."
+			fi
+		fi	
+	done
 }
 
 _ls_files() {

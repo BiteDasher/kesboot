@@ -3,9 +3,8 @@ Type = Path
 Operation = Install
 Operation = Upgrade
 Target = usr/lib/modules/*/vmlinuz
-Target = usr/lib/initcpio/*
 
 [Action]
-Description = Updating EFI variables...
+Description = Updating EFI variables (install)...
 When = PostTransaction
-Exec = /usr/share/libalpm/scripts/kesboot-hook
+Exec = /usr/share/libalpm/scripts/kesboot-install-hook

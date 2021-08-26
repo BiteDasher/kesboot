@@ -9,7 +9,7 @@ _lint_config || exit 1
 source /etc/kesboot.conf
 _check_binaries || exit $?
 BOOT_DIR="${BOOT_DIR%/}"
-_check_array
+_check_array || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?

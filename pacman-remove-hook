@@ -1,0 +1,10 @@
+[Trigger]
+Type = Path
+Operation = Remove
+Target = usr/lib/modules/*/vmlinuz
+
+[Action]
+Description = Updating EFI variables (remove)...
+When = PreTransaction
+Exec = /usr/share/libalpm/scripts/kesboot-remove-hook vmlinuz
+NeedsTargets
