@@ -183,6 +183,7 @@ _gen_efi_hook() {
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$EFI_PREFIX ($_i)" -u "$_initrd $_cmdline"
@@ -192,6 +193,7 @@ _gen_efi_hook() {
 		else
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$_i$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $_i$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$_i" -u "$_initrd $_cmdline"
@@ -207,6 +209,21 @@ _gen_efi_hook() {
 	_gen_cmdlines >> /etc/kesboot.conf
 	echo ")" >> /etc/kesboot.conf
 	$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
+}
+
+_wcl() {
+	local _line _count=0
+	while read -r _line; do
+		((_count++))
+	done
+	echo "$_count"
+}
+
+_stop_many() {
+	echo "Error: there is more than one variable with the same name in the EFI."
+	echo "Apparently, they were duplicated somehow. Try to fix it."
+	echo "Use: \"efibootmgr\" to find the variable and \"efibootmgr -b XXXX -B\" to delete"
+	exit 7
 }
 
 _remove_efi_hook() {
@@ -248,6 +265,7 @@ _remove_efi_hook() {
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_to_remove)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_to_remove)$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				sed "/'$_k' .*/d" -i /etc/kesboot.conf
@@ -258,6 +276,7 @@ _remove_efi_hook() {
 		else
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$_to_remove$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $_to_remove$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				sed "/'$_k' .*/d" -i /etc/kesboot.conf
@@ -342,6 +361,7 @@ _update_kernels() {
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$EFI_PREFIX ($_i)" -u "$_initrd $_cmdline"
@@ -351,6 +371,7 @@ _update_kernels() {
 		else
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$_i$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $_i$")"
+				(( "$(echo "$_efi_var" | _wcl)" > 1 )) && _stop_many
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$_i" -u "$_initrd $_cmdline"
@@ -364,15 +385,28 @@ _update_kernels() {
 }
 
 _remove_efi() {
-	local _string _test _beef _ques
+	local _string _test _beef _ques _total
 	if [ -z "$1" ]; then
 		echo "Error: the first argument is missing!"
 		return 1
 	fi
 	_test="$(_get_efi | grep --color=never -n -x "$1" | cut -d ":" -f 1)"
-	if [ -z "$_test" ] || (( "$(echo "$_test" | wc -l)" > 1 )); then
+	if [ -z "$_test" ]; then
 		echo "Something went wrong (most likely, there is no such EFI variable)"
 		return 3
+	fi
+	if (( "$(echo "$_test" | _wcl)" > 1 )); then
+		_total="$_test"
+		echo "There are more than two variables with the same name. Which one to delete? (the number before the colon)"
+		_get_efi | grep -n -x "$1"
+		read -r -p "> " _ques
+		[ -n "$_ques" ] || { echo "Nothing entered"; return 1 ; }
+		[[ "$_ques" != [0-9]* ]] && { echo "No number entered"; return 1; }
+		if [[ -z "$(echo "$_test" | grep -x "$_ques")" ]] || (( "$_ques" <= 0 )); then
+			echo "A number that goes beyond this range is entered"
+			return 7
+		fi
+		_test="$_ques"
 	fi
 	_string="$(_get_efi_num | sed "${_test}q;d")"
 	_beef="$_string"
