@@ -25,8 +25,8 @@ Script for automating work with EFI Kernel Stub (linux)
             │   ├── 61-remove-kesboot.hook <- targets for hook script *
             │   └── 99-update-kesboot.hook <- targets for hook script *
             └── scripts                                               *
-                ├── kesboot-remove-hook <- hook script                *
-                └── kesboot-install-hook <- hook script               *
+                ├── kesboot-install-hook <- hook script               *
+                └── kesboot-remove-hook <- hook script                *
 ```
 
 ## First boot:
