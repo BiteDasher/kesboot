@@ -87,7 +87,7 @@ _found_root() {
 	local _root
 	_root="$(findmnt -r -n -o SOURCE /)"
 	if [ "$?" != 0 ] || [ -z "$_root" ]; then
-		echo "Something went wrong"
+		echo "Something went wrong while searching for root"
 		return 3
 	fi
 	_root="$(lsblk -r -n -o PARTUUID "$_root")"
@@ -98,7 +98,7 @@ _found_boot() {
 	local _boot
 	_boot="$(findmnt -r -n -o SOURCE "$BOOT_DIR")"
 	if [ "$?" != 0 ] || [ -z "$_boot" ]; then
-		echo "Something went wrong"
+		echo "Something went wrong while searching for boot"
 		return 3
 	fi
 	export BOOT_DEVICE="$_boot"
@@ -230,8 +230,12 @@ _remove_efi_hook() {
 		[[ "$_to_remove" == */"$1" ]] || continue
 		_strings="$(echo "$_to_remove" | grep -o "[^/]*/[^/]*$")"
 		_strings="${_strings%%/*}"
-		_strings="$(strings "$_to_remove" | grep --color=never "$_strings" | grep -o "(.*)" | cut -d " " -f 1)"
+		_strings="$(strings "$_to_remove" | grep --color=never "$_strings" | grep -o "(.*@.*)" | cut -d " " -f 1)"
 		read -r _final <<< $(echo "$_strings")
+		if [[ -z "$_final" ]] || [[ "$_final" != *@* ]]; then
+			echo "Something went wrong while scanning the kernel file."
+			return 6
+		fi
 		_final="${_final%%@*}"
 		_final="${_final#(}"
 		_to_remove="${KERNEL_PREFIX}${_final}"
@@ -362,8 +366,8 @@ _update_kernels() {
 _remove_efi() {
 	local _string _test _beef _ques
 	if [ -z "$1" ]; then
-		echo "1"
-		return X
+		echo "Error: the first argument is missing!"
+		return 1
 	fi
 	_test="$(_get_efi | grep --color=never -n -x "$1" | cut -d ":" -f 1)"
 	if [ -z "$_test" ] || (( "$(echo "$_test" | wc -l)" > 1 )); then
