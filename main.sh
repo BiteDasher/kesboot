@@ -416,6 +416,7 @@ _remove_efi() {
 	case "$_ques" in
 		""|N*|n*) return 0 ;;
 		Y*|y*)    : ;;
+		*)        return 0 ;;
 	esac
 	$EFIBOOTMGR_PATH -b "$_string" -B
 }
