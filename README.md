@@ -40,6 +40,7 @@ sed
 grep
 lsblk 
 cut
+findmnt
 strings
 ```
 

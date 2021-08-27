@@ -20,6 +20,7 @@ _check_binaries() {
 	   ! if_com sed || \
 	   ! if_com grep || \
 	   ! if_com lsblk || \
+	   ! if_com findmnt || \
 	   ! if_com cut; then
 		echo "Error: some of the necessary binaries are missing (efibootmgr, sed, grep, lsblk, cut)"
 		return 1
