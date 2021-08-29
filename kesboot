@@ -30,7 +30,7 @@ if [ -z "$1" ]; then
 	exit 1
 fi
 if [ -n "$PRE_SCRIPT" ]; then
-	"$PRE_SCRIPT" || exit 1
+	$PRE_SCRIPT || exit $?
 fi
 case "$1" in
 	r|-r|--remove|remove)
@@ -53,5 +53,5 @@ case "$1" in
 	;;
 esac
 if [ -n "$POST_SCRIPT" ]; then
-	"$POST_SCRIPT" || exit 1
+	$POST_SCRIPT || exit $?
 fi
