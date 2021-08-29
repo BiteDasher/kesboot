@@ -16,7 +16,7 @@ EOF
 	;;
 esac
 if [ "$(id -u)" -ne 0 ]; then
-	echo "The script must be run with superuser rights"
+	echo "The script must be run with superuser rights" >&2
 	exit 1
 fi
 source /usr/share/kesboot/main.sh
@@ -26,7 +26,7 @@ source /etc/kesboot.conf
 _check_binaries || exit $?
 BOOT_DIR="${BOOT_DIR%/}"
 if [ -z "$1" ]; then
-	echo "The first argument is missing"
+	echo "The first argument is missing" >&2
 	exit 1
 fi
 if [ -n "$PRE_SCRIPT" ]; then
@@ -35,7 +35,7 @@ fi
 case "$1" in
 	r|-r|--remove|remove)
 		if [ -z "$2" ]; then
-			echo "The second argument is missing"
+			echo "The second argument is missing" >&2
 			exit 1
 		fi
 		_remove_efi "$2"

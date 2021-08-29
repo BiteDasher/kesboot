@@ -2,11 +2,11 @@
 
 _check_array() {
 	if [ -z "${CMDLINES[*]}" ]; then
-		echo "The CMDLINES array is missing. Edit the configuration file"
+		echo "The CMDLINES array is missing. Edit the configuration file" >&2
 		return 2
 	fi
 	if [ $(( ${#CMDLINES[@]} % 2 )) -ne 0 ]; then
-		echo "The array contains an odd number of array elements. Check the configuration file"
+		echo "The array contains an odd number of array elements. Check the configuration file" >&2
 		return 2
 	fi
 }
@@ -22,7 +22,7 @@ _check_binaries() {
 	   ! if_com lsblk || \
 	   ! if_com findmnt || \
 	   ! if_com cut; then
-		echo "Error: some of the necessary binaries are missing (efibootmgr, sed, grep, lsblk, findmnt, cut)"
+		echo "Error: some of the necessary binaries are missing (efibootmgr, sed, grep, lsblk, findmnt, cut)" >&2
 		return 1
 	fi
 }
@@ -30,7 +30,7 @@ _check_binaries() {
 _get_efi_prefix() {
 	local _name
 	_name="$(grep -o '^NAME=".*"' '/etc/os-release')"
-	if [ "$?" != 0 ]; then echo "Something went wrong"; return 3; fi
+	if [ "$?" != 0 ]; then echo "Something went wrong" >&2; return 3; fi
 	_name="${_name#*=}"
 	_name="${_name//\"/}"
 	if [ -z "$_name" ]; then
@@ -42,7 +42,7 @@ _get_efi_prefix() {
 
 _lint_config() {
 	(source "/etc/kesboot.conf") || {
-		echo "Error while checking the configuration file. See what's wrong with it"
+		echo "Error while checking the configuration file. See what's wrong with it" >&2
 		return 4
 	}
 }
@@ -52,7 +52,7 @@ _echo_cmdlines() {
 	_end="${#CMDLINES[@]}"
 	while [ "$_start" != "$_end" ]; do
 		eval "echo \${CMDLINES[$_start]}@@@\${CMDLINES[$(( $_start + 1 ))]}" || {
-			echo "Something went wrong"
+			echo "Something went wrong" >&2
 			return 3
 		}
 		_start=$((_start+2))
@@ -64,7 +64,7 @@ _gen_cmdlines() {
 	_end="${#CMDLINES[@]}"
 	while [ "$_start" != "$_end" ]; do
 		eval "echo \'\${CMDLINES[$_start]}\' \'\${CMDLINES[$(( $_start + 1 ))]}\'" || {
-			echo "Something went wrong"
+			echo "Something went wrong" >&2
 			return 3
 		}
 		_start=$((_start+2))
@@ -77,7 +77,7 @@ _echo_kernels() {
 	_end="${#CMDLINES[@]}"
 	while [ "$_start" != "$_end" ]; do
 		eval "echo \${CMDLINES[$_start]}" || {
-			echo "Something went wrong"
+			echo "Something went wrong" >&2
 			return 3
 		}
 		_start=$((_start+2))
@@ -88,7 +88,7 @@ _found_root() {
 	local _root
 	_root="$(findmnt -r -n -o SOURCE /)"
 	if [ "$?" != 0 ] || [ -z "$_root" ]; then
-		echo "Something went wrong while searching for root"
+		echo "Something went wrong while searching for root" >&2
 		return 3
 	fi
 	_root="$(lsblk -r -n -o PARTUUID "$_root")"
@@ -99,7 +99,7 @@ _found_boot() {
 	local _boot
 	_boot="$(findmnt -r -n -o SOURCE "$BOOT_DIR")"
 	if [ "$?" != 0 ] || [ -z "$_boot" ]; then
-		echo "Something went wrong while searching for boot"
+		echo "Something went wrong while searching for boot" >&2
 		return 3
 	fi
 	export BOOT_DEVICE="$_boot"
@@ -109,7 +109,7 @@ _get_bootorder() {
 	local _order
 	_order="$($EFIBOOTMGR_PATH | grep -o "^BootOrder: .*")"
 	if [ "$?" != 0 ] || [ -z "$_order" ]; then
-		echo "Something went wrong"
+		echo "Something went wrong" >&2
 		return 3
 	fi
 	_order="${_order##* }"
@@ -147,7 +147,7 @@ _get_cmdline() {
 	if [ -n "$_reg" ]; then
 		echo "$_reg"
 	else
-		echo "cmdline for $1 not found!"
+		echo "cmdline for $1 not found!" >&2
 		return 3
 	fi
 }
@@ -157,7 +157,7 @@ _gen_efi_hook() {
 	set -e
 	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var
 	if [ -z "$KERNEL_PREFIX" ] || [ -z "$INITRD_NAME" ]; then
-		echo "KERNEL_PREFIX or INITRD_NAME variable is empty, nothing to do"
+		echo "KERNEL_PREFIX or INITRD_NAME variable is empty, nothing to do" >&2
 		return 5
 	fi
 	_get_bootorder
@@ -221,20 +221,20 @@ _wcl() {
 }
 
 _stop_many() {
-	echo "Error: there is more than one variable with the same name in the EFI."
-	echo "Apparently, they were duplicated somehow. Try to fix it."
-	echo "Use: \"efibootmgr\" to find the variable and \"efibootmgr -b XXXX -B\" to delete"
+	echo "Error: there is more than one variable with the same name in the EFI." >&2
+	echo "Apparently, they were duplicated somehow. Try to fix it." >&2
+	echo "Use: \"efibootmgr\" to find the variable and \"efibootmgr -b XXXX -B\" to delete" >&2
 	exit 7
 }
 
 _remove_efi_hook() {
 	[ "$REMOVE_HOOK" == 1 ] || return 0
 	if ! if_com strings; then
-		echo "Error: command strings not found!"
+		echo "Error: command strings not found!" >&2
 		return 1
 	fi
 	if [ -z "$KERNEL_PREFIX" ]; then
-		echo "KERNEL_PREFIX variable is empty, nothing to do"
+		echo "KERNEL_PREFIX variable is empty, nothing to do" >&2
 		return 5
 	fi
 	local _to_remove _k _efi_var _strings _final
@@ -251,7 +251,7 @@ _remove_efi_hook() {
 		_strings="$(strings "$_to_remove" | grep --color=never "$_strings" | grep -o "(.*@.*)" | cut -d " " -f 1)"
 		read -r _final <<< $(echo "$_strings")
 		if [[ -z "$_final" ]] || [[ "$_final" != *@* ]]; then
-			echo "Something went wrong while scanning the kernel file."
+			echo "Something went wrong while scanning the kernel file." >&2
 			return 6
 		fi
 		_final="${_final%%@*}"
@@ -346,7 +346,7 @@ _update_kernels() {
 			set -e
 			_rdzero=0
 		else
-			echo "! Unable to detect kernel initrd for $_i. Setup INITRD_NAME in the configuration file or manually write it to the CMDLINE of this kernel as initrd=\path"
+			echo "! Unable to detect kernel initrd for $_i. Setup INITRD_NAME in the configuration file or manually write it to the CMDLINE of this kernel as initrd=\path" >&2
 			_initrd=""
 			set +e
 			_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
@@ -388,23 +388,23 @@ _update_kernels() {
 _remove_efi() {
 	local _string _test _beef _ques _total
 	if [ -z "$1" ]; then
-		echo "Error: the first argument is missing!"
+		echo "Error: the first argument is missing!" >&2
 		return 1
 	fi
 	_test="$(_get_efi | grep --color=never -n -x "$1" | cut -d ":" -f 1)"
 	if [ -z "$_test" ]; then
-		echo "Something went wrong (most likely, there is no such EFI variable)"
+		echo "Something went wrong (most likely, there is no such EFI variable)" >&2
 		return 3
 	fi
 	if (( "$(echo "$_test" | _wcl)" > 1 )); then
 		_total="$_test"
-		echo "There are more than two variables with the same name. Which one to delete? (the number before the colon)"
+		echo "There are more than two variables with the same name. Which one to delete? (the number before the colon)" >&2
 		_get_efi | grep -n -x "$1"
 		read -r -p "> " _ques
-		[ -n "$_ques" ] || { echo "Nothing entered"; return 1 ; }
-		[[ "$_ques" != [0-9]* ]] && { echo "No number entered"; return 1; }
+		[ -n "$_ques" ] || { echo "Nothing entered" >&2; return 1 ; }
+		[[ "$_ques" != [0-9]* ]] && { echo "No number entered" >&2; return 1; }
 		if [[ -z "$(echo "$_test" | grep -x "$_ques")" ]] || (( "$_ques" <= 0 )); then
-			echo "A number that goes beyond this range is entered"
+			echo "A number that goes beyond this range is entered" >&2
 			return 7
 		fi
 		_test="$_ques"
