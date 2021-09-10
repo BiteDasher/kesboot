@@ -160,7 +160,7 @@ _gen_efi_hook() {
 		echo "KERNEL_PREFIX or INITRD_NAME variable is empty, nothing to do" >&2
 		return 5
 	fi
-	_get_bootorder
+	#_get_bootorder
 	for _i in "${BOOT_DIR}/${KERNEL_PREFIX}"*; do
 		_i="${_i##*/}"
 		eval '_k="${_i/'${KERNEL_PREFIX}'/}"'
@@ -209,7 +209,7 @@ _gen_efi_hook() {
 	echo "CMDLINES=(" >> /etc/kesboot.conf
 	_gen_cmdlines >> /etc/kesboot.conf
 	echo ")" >> /etc/kesboot.conf
-	$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
+	#$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
 }
 
 _wcl() {
@@ -328,7 +328,7 @@ _get_efi_num() {
 _update_kernels() {
 	set -e
 	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var _raw _krnls _rdzero
-	_get_bootorder
+	#_get_bootorder
 	#for _i in "${BOOT_DIR}/${KERNEL_PREFIX}"*; do
 	_echo_kernels | while read -r _krnls; do
 		_i="${_krnls##*/}"
@@ -382,7 +382,7 @@ _update_kernels() {
 		fi	
 	done
 	set +e
-	$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
+	#$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"
 }
 
 _remove_efi() {
