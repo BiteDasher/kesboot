@@ -16,13 +16,12 @@ if_com() {
 }
 
 _check_binaries() {
-	if ! if_com $EFIBOOTMGR_PATH || \
-	   ! if_com sed || \
-	   ! if_com grep || \
-	   ! if_com lsblk || \
-	   ! if_com findmnt || \
-	   ! if_com cut; then
-		echo "Error: some of the necessary binaries are missing (efibootmgr, sed, grep, lsblk, findmnt, cut)" >&2
+	local i not_found=()
+	for i in $EFIBOOTMGR_PATH sed grep lsblk findmnt cut; do
+		if_com "$i" || not_found+=("$i")
+	done
+	if [ "${not_found[@]}" ]; then
+		echo "Error: some of the necessary binaries are missing (${not_found[@]})" >&2
 		return 1
 	fi
 }
@@ -57,6 +56,69 @@ _echo_cmdlines() {
 		}
 		_start=$((_start+2))
 	done
+}
+
+_action_file() {
+	export _OLD_FILE='/var/lib/kesboot/old_vars'
+	if [ -f "$_OLD_FILE" ]; then
+		return 0
+	else
+		mkdir -p -m 644 '/var/lib/kesboot'
+		>"$_OLD_FILE"
+		chmod 644 "$_OLD_FILE"
+		return 1
+	fi
+}
+
+_action_is_empty() {
+	[ -n "$(<"$_OLD_FILE")" ] && return 0 || return 1
+}
+
+_action_save() {
+	echo 'oCMDLINE_DEFAULT="'"$CMDLINE_DEFAULT"'"' > "$_OLD_FILE"
+	echo 'oINITRD_NAME="'"$INITRD_NAME"'"' >> "$_OLD_FILE"
+	echo 'oKERNEL_PREFIX="'"$KERNEL_PREFIX"'"' >> "$_OLD_FILE"
+	echo 'oUSE_DEF="'"$USE_DEF"'"' >> "$_OLD_FILE"
+	echo 'oEFIVAR_PREFIX="'"$EFIVAR_PREFIX"'"' >> "$_OLD_FILE"
+	echo 'oSUB_ROOT="'"$SUB_ROOT"'"' >> "$_OLD_FILE"
+	echo 'oCMDLINES=(' >> "$_OLD_FILE"
+	_gen_cmdlines >> "$_OLD_FILE"
+	echo ')' >> "$_OLD_FILE"
+}
+
+_action_cmdlines() {
+	local _start=0 _end
+	_end="${#oCMDLINES[@]}"
+	while [ "$_start" != "$_end" ]; do
+		eval "echo \${oCMDLINES[$_start]}@@@\${oCMDLINES[$(( $_start + 1 ))]}" || {
+			echo "Something went wrong" >&2
+			return 3
+		}
+		_start=$((_start+2))
+	done
+}
+
+_action_check() {
+	local cvar tvar changed=0 _krnls
+	export CHANGED_CMDLINE
+	source "$_OLD_FILE"
+	for cvar in oCMDLINE_DEFAULT oINITRD_NAME oKERNEL_PREFIX oUSE_DEF oEFIVAR_PREFIX oSUB_ROOT; do
+		tvar="${cvar/o/}"
+		eval 'if [ "$'$cvar'" == "$'$tvar'" ]; then :; else changed=1; echo "$cvar:$tvar"; fi'
+	done
+	if [ "$changed" == 1 ]; then
+		export MAIN_CHANGED=1
+		return 0
+	else
+		export MAIN_CHANGED=0
+	fi
+	while read -r _krnls; do
+		if [ "$(__get_cmdline "$_krnls")" == "$(__get_cmdline "$_krnls" "action")" ]; then
+			:
+		else
+			CHANGED_CMDLINE+="$_krnls\n"
+		fi
+	done <<<"$(_echo_kernels)"
 }
 
 _gen_cmdlines() {
@@ -117,8 +179,9 @@ _get_bootorder() {
 }
 
 __get_cmdline() {
-	local _one_cmdline _first _second _found=0 _reg
-	_echo_cmdlines | while read -r _one_cmdline; do
+	local _one_cmdline _first _second _found=0 _reg operation="_echo_cmdlines"
+	[ "$2" == "action" ] && operation="_action_cmdlines"
+	$operation | while read -r _one_cmdline; do
 		_first="${_one_cmdline%%@@@*}"
 		_second="${_one_cmdline##*@@@}"
 		if [ "$1" == "$_first" ]; then
@@ -153,14 +216,24 @@ _get_cmdline() {
 }
 
 _gen_efi_hook() {
+	local DO_ACTION=1
 	[ "$INSTALL_HOOK" == 1 ] || return 0
-	set -e
+	_action_is_empty || DO_ACTION=0
 	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var
 	if [ -z "$KERNEL_PREFIX" ] || [ -z "$INITRD_NAME" ]; then
 		echo "KERNEL_PREFIX or INITRD_NAME variable is empty, nothing to do" >&2
 		return 5
 	fi
 	#_get_bootorder
+	#####
+	if [ "$DO_ACTION" == 1 ]; then
+		_action_check
+	fi
+	#####
+	_basedisk="/dev/$(lsblk -r -n -o PKNAME "$BOOT_DEVICE")"
+	_part="$(lsblk -r -n -o KNAME "$BOOT_DEVICE")"
+	_part="$(</sys/class/block/"$_part"/partition)"
+	set -e
 	for _i in "${BOOT_DIR}/${KERNEL_PREFIX}"*; do
 		_i="${_i##*/}"
 		eval '_k="${_i/'${KERNEL_PREFIX}'/}"'
@@ -177,10 +250,8 @@ _gen_efi_hook() {
 		set -e
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"
 		echo -e -n "\n     initrd: $initrd\n"
-		_basedisk="/dev/$(lsblk -r -n -o PKNAME "$BOOT_DEVICE")"
-		_part="$(lsblk -r -n -o KNAME "$BOOT_DEVICE")"
-		_part="$(</sys/class/block/"$_part"/partition)"
 		#if [[ $(echo "$BOOT_DEVICE" | grep -E -- 'nv|mmc') ]]; then _baseof="${_basedisk}p${_part}"; else _baseof="${_basedisk}${_part}"; fi
+	if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 ]]; then
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
@@ -201,7 +272,8 @@ _gen_efi_hook() {
 			else
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$_i" -u "$_initrd $_cmdline"
 			fi
-		fi	
+		fi
+	fi
 	done
 	set +e
 	sed '/#CMDLINES=(.*/,/)/d' -i /etc/kesboot.conf
@@ -326,9 +398,19 @@ _get_efi_num() {
 }
 
 _update_kernels() {
-	set -e
+	local DO_ACTION=1
+	_action_is_empty || DO_ACTION=0
 	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var _raw _krnls _rdzero
+	#####
+	if [ "$DO_ACTION" == 1 ]; then
+		_action_check
+	fi
+	#####
 	#_get_bootorder
+	_basedisk="/dev/$(lsblk -r -n -o PKNAME "$BOOT_DEVICE")"
+	_part="$(lsblk -r -n -o KNAME "$BOOT_DEVICE")"
+	_part="$(</sys/class/block/"$_part"/partition)"
+	set -e
 	#for _i in "${BOOT_DIR}/${KERNEL_PREFIX}"*; do
 	_echo_kernels | while read -r _krnls; do
 		_i="${_krnls##*/}"
@@ -355,10 +437,8 @@ _update_kernels() {
 		fi
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"
 		[ "$_rdzero" == 0 ] && echo -e -n "\n     initrd: $initrd\n"
-		_basedisk="/dev/$(lsblk -r -n -o PKNAME "$BOOT_DEVICE")"
-		_part="$(lsblk -r -n -o KNAME "$BOOT_DEVICE")"
-		_part="$(</sys/class/block/"$_part"/partition)"
 		#if [[ $(echo "$BOOT_DEVICE" | grep -E -- 'nv|mmc') ]]; then _baseof="${_basedisk}p${_part}"; else _baseof="${_basedisk}${_part}"; fi
+	if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 ]]; then
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
@@ -380,6 +460,7 @@ _update_kernels() {
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS --create --disk "$_basedisk" --part "$_part" --loader "\\${_i}" --label "$_i" -u "$_initrd $_cmdline"
 			fi
 		fi	
+	fi
 	done
 	set +e
 	#$EFIBOOTMGR_PATH --bootorder "$BOOT_ORDER"

@@ -8,9 +8,11 @@ source /usr/share/kesboot/default
 _lint_config || exit 1
 source /etc/kesboot.conf
 _check_binaries || exit $?
+_action_file
 BOOT_DIR="${BOOT_DIR%/}"
 _check_array || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?
 _gen_efi_hook
+_action_save

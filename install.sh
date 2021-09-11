@@ -4,6 +4,7 @@ __install() {
 	sudo install -vDm644 ./main.sh /usr/share/kesboot/main.sh
 	sudo install -vDm644 ./default /usr/share/kesboot/default
 	sudo install -vDm644 ./kesboot.conf /etc/kesboot.conf
+	sudo mkdir -v -p -m 644 /var/lib/kesboot
 	[ "$PACMAN" == 1 ] && {
 	sudo install -vDm755 ./hook-install /usr/share/libalpm/scripts/kesboot-install-hook
 	sudo install -vDm755 ./hook-remove /usr/share/libalpm/scripts/kesboot-remove-hook
@@ -18,6 +19,7 @@ case "$1" in
 	install) __install ;;
 	remove) sudo rm -r -v /usr/local/bin/kesboot \
 			      /usr/share/kesboot \
+			      /var/lib/kesboot \
 			      /etc/kesboot.conf $(
 			      if [ "$PACMAN" == 1 ]; then echo '
 				/usr/share/libalpm/scripts/kesboot-install-hook
@@ -32,5 +34,6 @@ case "$1" in
 		install -Dm755 ./hook-install "$pkgdir"/usr/share/libalpm/scripts/kesboot-install-hook
 		install -Dm755 ./hook-remove "$pkgdir"/usr/share/libalpm/scripts/kesboot-remove-hook
 		install -Dm644 ./pacman-install-hook "$pkgdir"/usr/share/libalpm/hooks/99-update-kesboot.hook
-		install -Dm644 ./pacman-remove-hook "$pkgdir"/usr/share/libalpm/hooks/61-remove-kesboot.hook ;;
+		install -Dm644 ./pacman-remove-hook "$pkgdir"/usr/share/libalpm/hooks/61-remove-kesboot.hook
+		mkdir -p -m 644 "$pkgdir"/var/lib/kesboot ;;
 esac
