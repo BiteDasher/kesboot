@@ -219,7 +219,7 @@ _gen_efi_hook() {
 	local DO_ACTION=1
 	[ "$INSTALL_HOOK" == 1 ] || return 0
 	_action_is_empty || DO_ACTION=0
-	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var
+	local _i _k _wow _basedisk _part _baseof _cmdline _efi_var _new_kernels
 	if [ -z "$KERNEL_PREFIX" ] || [ -z "$INITRD_NAME" ]; then
 		echo "KERNEL_PREFIX or INITRD_NAME variable is empty, nothing to do" >&2
 		return 5
@@ -241,6 +241,7 @@ _gen_efi_hook() {
 		if [ -z "$(_echo_kernels | grep -x "$_k")" ]; then
 			echo "---> New kernel: $_k"
 			CMDLINES+=("$_k" "")
+			_new_kernels+="$_k\n"
 		fi
 		#####
 		initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
@@ -251,7 +252,7 @@ _gen_efi_hook() {
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"
 		echo -e -n "\n     initrd: $initrd\n"
 		#if [[ $(echo "$BOOT_DEVICE" | grep -E -- 'nv|mmc') ]]; then _baseof="${_basedisk}p${_part}"; else _baseof="${_basedisk}${_part}"; fi
-	if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 ]]; then
+		if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 || -n "$(echo -e "$_new_kernels" | grep -x "$_k")" ]]; then
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
