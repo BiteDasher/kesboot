@@ -104,7 +104,7 @@ _action_check() {
 	source "$_OLD_FILE"
 	for cvar in oCMDLINE_DEFAULT oINITRD_NAME oKERNEL_PREFIX oUSE_DEF oEFIVAR_PREFIX oSUB_ROOT; do
 		tvar="${cvar/o/}"
-		eval 'if [ "$'$cvar'" == "$'$tvar'" ]; then :; else changed=1; echo "$cvar:$tvar"; fi'
+		eval 'if [ "$'$cvar'" == "$'$tvar'" ]; then :; else changed=1; fi'
 	done
 	if [ "$changed" == 1 ]; then
 		export MAIN_CHANGED=1
