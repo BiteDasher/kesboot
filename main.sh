@@ -146,7 +146,7 @@ _echo_kernels() {
 	done
 }
 
-_actions_kernels() {
+_action_kernels() {
 	local _start=0 _end
 	_end="${#oCMDLINES[@]}"
 	while [ "$_start" != "$_end" ]; do
