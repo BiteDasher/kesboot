@@ -113,7 +113,7 @@ _action_check() {
 		export MAIN_CHANGED=0
 	fi
 	while read -r _krnls; do
-		if [ "$(__get_cmdline "$_krnls")" == "$(__get_cmdline "$_krnls" "action")" ]; then
+		if [ "$(__get_cmdline "$_krnls")" == "$(__get_cmdline "$_krnls" "action")" ] && [ -n "$(_action_kernels | grep -x "$_krnls")" ]; then
 			:
 		else
 			CHANGED_CMDLINE+="$_krnls\n"
@@ -139,6 +139,18 @@ _echo_kernels() {
 	_end="${#CMDLINES[@]}"
 	while [ "$_start" != "$_end" ]; do
 		eval "echo \${CMDLINES[$_start]}" || {
+			echo "Something went wrong" >&2
+			return 3
+		}
+		_start=$((_start+2))
+	done
+}
+
+_actions_kernels() {
+	local _start=0 _end
+	_end="${#oCMDLINES[@]}"
+	while [ "$_start" != "$_end" ]; do
+		eval "echo \${oCMDLINES[$_start]}" || {
 			echo "Something went wrong" >&2
 			return 3
 		}
@@ -207,10 +219,10 @@ __get_cmdline() {
 
 _get_cmdline() {
 	_reg="$(__get_cmdline "$1")"
-	if [ -n "$_reg" ]; then
+	if [ -n "$(_echo_kernels | grep -x "$1")" ]; then
 		echo "$_reg"
 	else
-		echo "cmdline for $1 not found!" >&2
+		echo "kernel \"$1\" not found!" >&2
 		return 3
 	fi
 }
