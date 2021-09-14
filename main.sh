@@ -355,6 +355,7 @@ _remove_efi_hook() {
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				sed "/'$_k' .*/d" -i /etc/kesboot.conf
+				sed "/'$_k' .*/d" -i "$_OLD_FILE"
 				echo "===> Removed $_k"
 			else
 				echo "Can't find the $_k kernel in the EFI variables..."
@@ -366,6 +367,7 @@ _remove_efi_hook() {
 				_efi_var="${_efi_var%% *}"
 				$EFIBOOTMGR_PATH $EFIBOOTMGR_EXTRA_FLAGS -b "$_efi_var" -B
 				sed "/'$_k' .*/d" -i /etc/kesboot.conf
+				sed "/'$_k' .*/d" -i "$_OLD_FILE"
 				echo "===> Removed $_k"
 			else
 				echo "Can't find the $_k kernel in the EFI variables..."
