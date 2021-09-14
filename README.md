@@ -2,12 +2,31 @@
 Script for automating work with EFI Kernel Stub (linux)
 
 ## How-to use:
+
+Let's say the mounted [FAT32](https://wiki.archlinux.org/title/EFI_system_partition) directory is located on the `/boot` path \
+Let's look in the `/boot` directory
+```
+/boot
+├── vmlinuz-linux
+└── initramfs-linux.img
+```
+
+`KERNEL_PREFIX` in the configuration file is specified as "`vmlinuz-`", respectively, we will indicate our kernel as "`linux`".  Let's write the resulting pair into the array of the configuration file, as
+
+`CMDLINES=('linux' '')`
+
+Finally, let's generate the EFI variables
+
+`kesboot -u`
+
+Also, you can execute
+
 `kesboot --help`
 
 ## How-to install:
 `./install.sh` (for remove use `./install.sh remove`)
 
-## Directory structure:
+## Package directory structure:
 ```
 /
 ├── etc
