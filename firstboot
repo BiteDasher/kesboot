@@ -103,6 +103,6 @@ _check_array || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?
-_update_kernels
 _action_file
+_update_kernels
 _action_save

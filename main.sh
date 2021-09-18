@@ -453,7 +453,7 @@ _update_kernels() {
 		echo -e -n "===> Kernel: $_i\n     cmdline: $_cmdline"
 		[ "$_rdzero" == 0 ] && echo -e -n "\n     initrd: $initrd\n"
 		#if [[ $(echo "$BOOT_DEVICE" | grep -E -- 'nv|mmc') ]]; then _baseof="${_basedisk}p${_part}"; else _baseof="${_basedisk}${_part}"; fi
-	if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 ]]; then
+	if [[ -n "$(echo -e "$CHANGED_CMDLINE" | grep -x "$_k")" || "$MAIN_CHANGED" == 1 || "$DO_ACTION" == 0 || "$FORCE_UPDATE" == 1 ]]; then
 		if [ "$EFIVAR_PREFIX" == 1 ]; then
 			if [ "$(_grep=1 _get_efi_num | grep -o "^$EFI_PREFIX ($_i)$")" ]; then
 				_efi_var="$(_get_efi_num | grep -o ".... $EFI_PREFIX ($_i)$")"
