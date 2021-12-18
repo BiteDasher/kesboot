@@ -81,6 +81,7 @@ _action_save() {
 	echo 'oUSE_DEF="'"$USE_DEF"'"' >> "$_OLD_FILE"
 	echo 'oEFIVAR_PREFIX="'"$EFIVAR_PREFIX"'"' >> "$_OLD_FILE"
 	echo 'oSUB_ROOT="'"$SUB_ROOT"'"' >> "$_OLD_FILE"
+	echo 'oMICROCODE="'"$MICROCODE"'"' >> "$_OLD_FILE"
 	echo 'oCMDLINES=(' >> "$_OLD_FILE"
 	_gen_cmdlines >> "$_OLD_FILE"
 	echo ')' >> "$_OLD_FILE"
@@ -102,7 +103,7 @@ _action_check() {
 	local cvar tvar changed=0 _krnls
 	export CHANGED_CMDLINE
 	source "$_OLD_FILE"
-	for cvar in oCMDLINE_DEFAULT oINITRD_NAME oKERNEL_PREFIX oUSE_DEF oEFIVAR_PREFIX oSUB_ROOT; do
+	for cvar in oCMDLINE_DEFAULT oINITRD_NAME oKERNEL_PREFIX oUSE_DEF oEFIVAR_PREFIX oSUB_ROOT oMICROCODE; do
 		tvar="${cvar/o/}"
 		eval 'if [ "$'$cvar'" == "$'$tvar'" ]; then :; else changed=1; fi'
 	done
@@ -177,6 +178,15 @@ _found_boot() {
 		return 3
 	fi
 	export BOOT_DEVICE="$_boot"
+}
+
+_get_microcode() {
+	[ -z "$MICROCODE" ] && return 0
+	if ! [[ -f "$BOOT_DIR"/"$MICROCODE" || -L "$BOOT_DIR"/"$MICROCODE" ]]; then
+		echo "Microcode file not found" >&2
+		return 8
+	fi
+	export _ucode="initrd=\\$MICROCODE"
 }
 
 _get_bootorder() {
@@ -258,6 +268,7 @@ _gen_efi_hook() {
 		#####
 		initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
 		_initrd="initrd=\\$initrd"
+		[ -n "$_ucode" ] && _initrd="$_ucode $_initrd"
 		set +e
 		_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
 		set -e
@@ -438,6 +449,7 @@ _update_kernels() {
 		if [ -n "$INITRD_NAME" ]; then
 			initrd="$(eval echo '${INITRD_NAME/@kernel@/'$_k'}')"
 			_initrd="initrd=\\$initrd"
+			[ -n "$_ucode" ] && _initrd="$_ucode $_initrd"
 			set +e
 			_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
 			set -e
@@ -445,6 +457,7 @@ _update_kernels() {
 		else
 			echo "! Unable to detect kernel initrd for $_i. Setup INITRD_NAME in the configuration file or manually write it to the CMDLINE of this kernel as initrd=\path" >&2
 			_initrd=""
+			[ -n "$_ucode" ] && _initrd="$_ucode"
 			set +e
 			_cmdline="$(_get_cmdline "$_k")" || { set -e; continue; }
 			set -e

@@ -11,4 +11,5 @@ KERNEL_PREFIX=vmlinuz-
 USE_DEF=1
 EFIVAR_PREFIX=1
 SUB_ROOT=1
+MICROCODE=
 CMDLINES=('linux' 'mitigations=off')

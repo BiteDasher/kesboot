@@ -14,5 +14,6 @@ _check_array || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?
+_get_microcode || exit $?
 _gen_efi_hook
 _action_save

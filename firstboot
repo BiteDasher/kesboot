@@ -39,6 +39,21 @@ _read4() {
 _read5() {
 	read -r -p "Use a postscript of OS name in the name of EFI variables? [Yes] " _efi_postscript
 }
+_read6() {
+	_ucode_test="$(for __i in "$_boot_dir"/*code*.img; do echo "$__i"; done)"
+	if [ -n "$_ucode_test" ]; then
+		if [ "$(echo "$_ucode_test" | wc -l)" == 1 ]; then
+			_microcode="${_ucode_test##*/}"
+			return 0
+		fi
+		echo "-----"
+		for __ii in "$_boot_dir"/*code*.img; do
+			echo "${__ii##*/}"
+		done
+		echo "-----"
+		read -r -p "Enter which microcode to load: " _microcode
+	fi
+}
 _read1
 [ -z "$_boot_dir" ] && _boot_dir='/boot'
 _boot_dir="${_boot_dir%/}"
@@ -86,6 +101,7 @@ case "$_efi_postscript" in
 	""|Y*|y*) _use_efi=1 ;;
 	*) _use_efi=0 ;;
 esac
+_read6
 _boot_dir="${_boot_dir//\//\\/}"
 sed "s/#BOOT_DIR=\/boot/BOOT_DIR=$_boot_dir/" -i /etc/kesboot.conf
 [ -n "$_kernel_prefix" ] && sed "s/#KERNEL_PREFIX=vmlinuz-/KERNEL_PREFIX=$_kernel_prefix/" -i /etc/kesboot.conf || \
@@ -94,6 +110,8 @@ sed "s/#BOOT_DIR=\/boot/BOOT_DIR=$_boot_dir/" -i /etc/kesboot.conf
                           sed "s/#INITRD_NAME=initramfs-@kernel@.img/INITRD_NAME=/" -i /etc/kesboot.conf
 [ "$_use_efi" == 1 ] && sed "s/#EFIVAR_PREFIX=1/EFIVAR_PREFIX=1/" -i /etc/kesboot.conf || \
                         sed "s/#EFIVAR_PREFIX=1/EFIVAR_PREFIX=0/" -i /etc/kesboot.conf
+[ -n "$_microcode" ] && sed "s/#MICROCODE=/MICROCODE=$_microcode/" -i /etc/kesboot.conf || \
+	                sed "s/#MICROCODE=/MICROCODE=/" -i /etc/kesboot.conf
 source /usr/share/kesboot/main.sh
 source /usr/share/kesboot/default
 #_lint_config || exit 1
@@ -103,6 +121,7 @@ _check_array || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?
+_get_microcode || exit $?
 _action_file
 _update_kernels
 _action_save
