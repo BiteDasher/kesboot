@@ -1,6 +1,7 @@
 #!/bin/bash
 if [ "$(id -u)" -ne 0 ]; then echo "Run this script as root"; exit 1; fi
 if [ ! -t 0 ]; then pipe=1; else pipe=0; _file="$(realpath -L "$0")"; fi
+[ "$pipe" == 1 ] && exec 3<&0
 if [[ -n "$_file" && "$_file" == */fd/* ]]; then _file=; fi
 if ! command -v curl &>/dev/null || ! command -v ping &>/dev/null || ! command -v findmnt &>/dev/null; then echo "One of the following commands was not found: curl, ping, findmnt"; exit 1; fi
 if ! ping -c 1 github.com 1>/dev/null; then echo -e "Check your internet connection!" >&2; exit 1; fi
