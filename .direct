@@ -1,0 +1,29 @@
+#!/bin/bash
+if [ "$(id -u)" -ne 0 ]; then echo "Run this script as root"; exit 1; fi
+if [ ! -t 0 ]; then pipe=1; else pipe=0; _file="$(realpath -L "$0")"; fi
+if [[ -n "$_file" && "$_file" == */fd/* ]]; then _file=; fi
+if ! command -v curl &>/dev/null || ! command -v ping &>/dev/null || ! command -v findmnt &>/dev/null; echo "One of the following commands was not found: curl, ping, findmnt"; exit 1; fi
+if ! ping -c 1 github.com 1>/dev/null; then echo -e "Check your internet connection!" >&2; exit 1; fi
+if [ -n "$TMPDIR" ]; then __KESTMP="$TMPDIR/kesboot.tmp.$RANDOM"; else __KESTMP="/tmp/kesboot.tmp.$RANDOM"; fi
+_head="$(findmnt -n -r -o SOURCE /)"
+_bn="$(basename "$_head")"
+if ! grep -q "$_bn" /proc/partitions; then echo "LiveCD system detected."; read -r -p "Enter mountpoint of future system [/mnt]: " _mnt; [ -z "$_mnt" ] && _mnt='/mnt'; if [ -e "$_mnt" ]; then : ; else echo "\"$_mnt\" not found"; exit 1; fi; fi
+
+if ! findmnt "$_mnt" &>/dev/null; then _mnt=; fi
+link="https://raw.githubusercontent.com/BiteDasher/kesboot/master"
+mkdir -p -m 0755 "$__KESTMP"
+curl --progress-bar -L -o "$__KESTMP/kesboot" "$link"/kesboot
+curl --progress-bar -L -o "$__KESTMP/kesboot.conf" "$link"/kesboot.conf
+curl --progress-bar -L -o "$__KESTMP/default" "$link"/default
+curl --progress-bar -L -o "$__KESTMP/main.sh" "$link"/main.sh
+[ -n "$_mnt" ] && curl --progress-bar -L -o "$__KESTMP/firstboot" "$link"/firstboot
+[ -n "$_mnt" ] && root="$_mnt" || root=
+install -vDm755 "$__KESTMP"/kesboot $root/usr/local/bin/kesboot
+install -vDm644 "$__KESTMP"/main.sh $root/usr/share/kesboot/main.sh
+install -vDm644 "$__KESTMP"/default $root/usr/share/kesboot/default
+install -vDm644 "$__KESTMP"/kesboot.conf $root/etc/kesboot.conf
+mkdir -v -p -m 644 $root/var/lib/kesboot
+[ -n "$_mnt" ] && install -vDm755 "$__KESTMP"/firstboot $root/usr/local/bin/firstboot
+rm -r -f "$__KESTMP"
+{ sleep 1; if [ "$pipe" == 0 ]; then rm -r -f "$_file" &>/dev/null; fi; } &
+kesboot "$@"
