@@ -69,4 +69,4 @@ https://aur.archlinux.org/kesboot-git.git
 
 ## Direct link:
 
-~~https://git.io/JEuL9~~
+https://git.io/JDXoq
