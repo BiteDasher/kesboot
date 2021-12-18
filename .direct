@@ -7,7 +7,7 @@ if ! ping -c 1 github.com 1>/dev/null; then echo -e "Check your internet connect
 if [ -n "$TMPDIR" ]; then __KESTMP="$TMPDIR/kesboot.tmp.$RANDOM"; else __KESTMP="/tmp/kesboot.tmp.$RANDOM"; fi
 _head="$(findmnt -n -r -o SOURCE /)"
 _bn="$(basename "$_head")"
-if ! grep -q "$_bn" /proc/partitions; then echo "LiveCD system detected."; read -r -p "Enter mountpoint of future system [/mnt]: " _mnt; [ -z "$_mnt" ] && _mnt='/mnt'; if [ -e "$_mnt" ]; then : ; else echo "\"$_mnt\" not found"; exit 1; fi; fi
+if ! grep -q "$_bn" /proc/partitions; then echo "LiveCD system detected."; if [ "$pipe" == 1 ]; then read -r -p "Enter mountpoint of future system [/mnt]: " _mnt <&3; else read -r -p "Enter mountpoint of future system [/mnt]: " _mnt; fi; [ -z "$_mnt" ] && _mnt='/mnt'; if [ -e "$_mnt" ]; then : ; else echo "\"$_mnt\" not found"; exit 1; fi; fi
 
 if ! findmnt "$_mnt" &>/dev/null; then _mnt=; fi
 link="https://raw.githubusercontent.com/BiteDasher/kesboot/master"
