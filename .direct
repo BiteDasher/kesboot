@@ -27,4 +27,4 @@ mkdir -v -p -m 644 $root/var/lib/kesboot
 [ -n "$_mnt" ] && install -vDm755 "$__KESTMP"/firstboot $root/usr/local/bin/firstboot
 rm -r -f "$__KESTMP"
 { sleep 1; if [ "$pipe" == 0 ]; then rm -r -f "$_file" &>/dev/null; fi; } &
-kesboot "$@"
+[ -n "$*" ] && kesboot "$@" || :
