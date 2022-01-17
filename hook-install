@@ -10,7 +10,7 @@ source /etc/kesboot.conf
 _check_binaries || exit $?
 _action_file
 BOOT_DIR="${BOOT_DIR%/}"
-_check_array || exit $?
+_check_array zero-skip || exit $?
 _get_efi_prefix
 _found_root || exit $?
 _found_boot || exit $?

@@ -1,10 +1,12 @@
 # Kernel EFI Stub Bootloader
 
 _check_array() {
+	if [ "$1" == "zero-skip" ]; then :; else ###
 	if [ -z "${CMDLINES[*]}" ]; then
 		echo "The CMDLINES array is missing. Edit the configuration file" >&2
 		return 2
 	fi
+	fi					 ###
 	if [ $(( ${#CMDLINES[@]} % 2 )) -ne 0 ]; then
 		echo "The array contains an odd number of array elements. Check the configuration file" >&2
 		return 2
