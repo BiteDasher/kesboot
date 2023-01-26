@@ -163,7 +163,7 @@ _action_kernels() {
 
 _found_root() {
 	local _root
-	_root="$(findmnt -r -n -o SOURCE /)"
+	_root="$(findmnt --real -r -n -o SOURCE /)"
 	if [ "$?" != 0 ] || [ -z "$_root" ]; then
 		echo "Something went wrong while searching for root" >&2
 		return 3
@@ -174,7 +174,7 @@ _found_root() {
 
 _found_boot() {
 	local _boot
-	_boot="$(findmnt -r -n -o SOURCE "$BOOT_DIR")"
+	_boot="$(findmnt --real -r -n -o SOURCE "$BOOT_DIR")"
 	if [ "$?" != 0 ] || [ -z "$_boot" ]; then
 		echo "Something went wrong while searching for boot" >&2
 		return 3
