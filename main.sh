@@ -166,8 +166,8 @@ _found_root() {
 	_root="$(findmnt -r -n -o SOURCE /)"
 	_subvol="${_root#*\[}"
 	_subvol="${_subvol%\]*}"
+	if [[ "$_root" != "$_subvol" ]]; then
 	_subvol="${_subvol#\/}"
-	if [ "$_root" != "$_subvol" ]; then
 		export SUBVOL="rootflags=subvol=$_subvol"
 		_root="${_root%\[*}"
 	else
