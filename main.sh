@@ -164,6 +164,15 @@ _action_kernels() {
 _found_root() {
 	local _root
 	_root="$(findmnt -r -n -o SOURCE /)"
+	_subvol="${_root#*\[}"
+	_subvol="${_subvol%\]*}"
+	_subvol="${_subvol#\/}"
+	if [ "$_root" != "$_subvol" ]; then
+		export SUBVOL="rootflags=subvol=$_subvol"
+		_root="${_root%\[*}"
+	else
+		export SUBVOL=""
+	fi
 	if [ "$?" != 0 ] || [ -z "$_root" ]; then
 		echo "Something went wrong while searching for root" >&2
 		return 3
@@ -212,14 +221,14 @@ __get_cmdline() {
 			if [ "$USE_DEF" == 1 ]; then
 				if [ "$SUB_ROOT" == 1 ]; then
 					_found_root
-					echo "$CMDLINE_DEFAULT root=PARTUUID=$ROOT_DEVICE $_second"
+					echo "$CMDLINE_DEFAULT root=PARTUUID=$ROOT_DEVICE $SUBVOL $_second"
 				else
 					echo "$CMDLINE_DEFAULT $_second"
 				fi
 			else
 				if [ "$SUB_ROOT" == 1 ]; then
 					_found_root
-					eval 'echo "root=PARTUUID='$ROOT_DEVICE' ${_second/@def@/'$CMDLINE_DEFAULT'}"'
+					eval 'echo "root=PARTUUID='$ROOT_DEVICE' $SUBVOL ${_second/@def@/'$CMDLINE_DEFAULT'}"'
 				else
 					eval 'echo "${_second/@def@/'$CMDLINE_DEFAULT'}"'
 				fi
